@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0e1116">
+<title>Controle de Docas · São José do Rio Preto</title>
+<style>
+  :root{
+    --bg:#0e1116;--card:#171c24;--card2:#1e2530;--line:#2b3442;
+    --txt:#e8edf4;--mut:#8b98aa;--accent:#3b82f6;--ok:#22c55e;
+    --warn:#f59e0b;--danger:#ef4444;--blink:#facc15;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:14px;min-height:100vh}
+  .cont{max-width:1300px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:8px}
+  header h1{font-size:1.05rem;letter-spacing:.4px}
+  header h1 span{color:var(--accent)}
+  .topo-dir{display:flex;align-items:center;gap:10px}
+  .pill{font-size:.7rem;padding:4px 10px;border-radius:20px;font-weight:700;background:#1f2937;color:var(--mut)}
+  .pill.on{background:rgba(34,197,94,.16);color:var(--ok)}
+  .pill.off{background:rgba(239,68,68,.16);color:var(--danger)}
+  .relogio{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+  .relogio small{display:block;font-size:.65rem;color:var(--mut);font-weight:400;text-align:right}
+  h2{font-size:.9rem;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin:20px 0 10px}
+  .docas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .doca{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:9px;min-height:210px;transition:.3s}
+  .doca.livre{border-style:dashed;opacity:.8}
+  .doca .topo{display:flex;justify-content:space-between;align-items:center}
+  .doca .num{font-size:1.1rem;font-weight:800;color:var(--accent)}
+  .status{font-size:.68rem;padding:3px 9px;border-radius:20px;font-weight:700}
+  .st-livre{background:#1f2937;color:var(--mut)}
+  .st-ocupada{background:rgba(34,197,94,.15);color:var(--ok)}
+  .st-pisca{background:rgba(250,204,21,.18);color:#facc15}
+  .doca .info{font-size:.82rem;line-height:1.6;flex:1}
+  .doca .info b{color:#fff}
+  .doca .dest{color:var(--accent);font-weight:700}
+  .doca .fiscal{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--mut);border-top:1px dashed var(--line);padding-top:7px}
+  .doca .fiscal input{background:transparent;border:none;color:var(--warn);font-weight:700;font-size:.8rem;width:100%;outline:none}
+  .doca .foto{width:100%;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .botoes{display:flex;gap:7px;flex-wrap:wrap}
+  button{cursor:pointer;border:none;border-radius:9px;padding:9px 12px;font-weight:700;font-size:.78rem;font-family:inherit;transition:.2s}
+  .btn-out{background:var(--danger);color:#fff;flex:1}
+  .btn-add{background:var(--accent);color:#fff;flex:1}
+  .btn-ok{background:var(--ok);color:#06280f}
+  .btn-ghost{background:var(--card2);color:var(--txt)}
+  .pisca{animation:piscar 1.1s infinite}
+  .pisca-alerta{animation:alerta .8s infinite;box-shadow:0 0 0 2px var(--blink) inset}
+  @keyframes piscar{0%,100%{border-color:var(--line);background:var(--card)}50%{border-color:var(--blink);background:rgba(250,204,21,.10);box-shadow:0 0 22px rgba(250,204,21,.35)}}
+  @keyframes alerta{0%,100%{background:var(--card)}50%{background:rgba(245,158,11,.18);border-color:var(--warn)}}
+  .fila-lista{display:flex;flex-direction:column;gap:9px}
+  .item-fila{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .item-fila .dados{font-size:.82rem;line-height:1.55}
+  .item-fila .dest{color:var(--accent);font-weight:800;font-size:.9rem}
+  .item-fila .placa{font-family:monospace;background:#0b0f14;padding:2px 7px;border-radius:5px;font-weight:700;letter-spacing:1px}
+  .vazio{color:var(--mut);font-size:.82rem;padding:14px;text-align:center;border:1px dashed var(--line);border-radius:11px}
+  .form-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .grid-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px}
+  label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin-bottom:4px}
+  input,select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:.82rem;font-family:inherit;outline:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  .foto-area{margin-top:11px;display:flex;gap:11px;align-items:center;flex-wrap:wrap;border:1px dashed var(--line);border-radius:11px;padding:11px}
+  #preview{width:100px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:none}
+  .acoes{margin-top:12px;display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th,td{padding:9px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-size:.66rem;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+  tr:hover{background:var(--card2)}
+  .tag-saiu{color:var(--danger);font-weight:700;font-size:.72rem}
+  .tag-fila{color:var(--warn);font-weight:700;font-size:.72rem}
+  .tag-doca{color:var(--ok);font-weight:700;font-size:.72rem}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--ok);color:#04220d;padding:12px 20px;border-radius:11px;font-weight:700;font-size:.84rem;transition:.35s;z-index:99;max-width:90vw;text-align:center}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .rodape{margin-top:16px;font-size:.7rem;color:var(--mut);text-align:center;line-height:1.7}
+  .tabbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .tabbar button{background:var(--card);color:var(--mut);border:1px solid var(--line);flex:1;min-width:110px}
+  .tabbar button.ativo{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="cont">
+  <header>
+    <h1>Controle de Docas <span>· São José do Rio Preto</span></h1>
+    <div class="topo-dir">
+      <span class="pill" id="pillRT">conectando…</span>
+      <div class="relogio"><span id="hora">--:--:--</span><small id="dataHoje">--/--/----</small></div>
+    </div>
+  </header>
+
+  <div class="tabbar">
+    <button class="ativo" onclick="aba('painel')">🎯 Painel</button>
+    <button onclick="aba('chegada')">📥 Chegada</button>
+    <button onclick="aba('relatorio')">📊 Relatório</button>
+  </div>
+
+  <section id="secaoPainel">
+    <h2>⚓ Docas 1 · 2 · 3 · 4</h2>
+    <div class="docas" id="docas"></div>
+
+    <h2>⏳ Fila de Espera</h2>
+    <div class="fila-lista" id="fila"></div>
+  </section>
+
+  <section id="secaoChegada" style="display:none">
+    <h2>📥 Registrar Chegada</h2>
+    <div class="form-card">
+      <div class="grid-form">
+        <div><label>Destino</label>
+          <select id="fDestino">
+            <option>SC_GD_Goiânia_02</option><option>SC_PR_Curitiba</option><option>SC_SP_Cravinhos</option>
+            <option>SC_SP_Guarulhos</option><option>SC_AC_Itajaí</option><option>SC_RJ_Queimados</option>
+            <option>SC_MG_Betim</option><option>SC_BA_Simões_Filho</option><option>SC_SP_São_josé_do_Rio_preto</option>
+          </select></div>
+        <div><label>Placa (ao chegar)</label><input id="fPlaca" maxlength="8" placeholder="UOD0A16" style="text-transform:uppercase"></div>
+        <div><label>Tipo</label><select id="fTipo"><option>Carreta</option><option>Truck</option><option>Bitrem</option><option>Rodotrem</option></select></div>
+        <div><label>ETD</label><input id="fEtd" type="time"></div>
+        <div><label>Data de chegada</label><input id="fData" type="date"></div>
+        <div><label>Responsável</label><input id="fResp" placeholder="Nome"></div>
+      </div>
+      <div class="foto-area">
+        <div><label>Foto da placa</label><input id="fFoto" type="file" accept="image/*" capture="environment"></div>
+        <img id="preview" alt="prévia">
+      </div>
+      <div class="acoes"><button class="btn-add" onclick="registrarChegada()">✅ Registrar Chegada</button></div>
+    </div>
+  </section>
+
+  <section id="secaoRelatorio" style="display:none">
+    <h2>📊 Relatório</h2>
+    <div class="form-card" style="padding:0;overflow:auto">
+      <table><thead><tr>
+        <th>Destino</th><th>Placa</th><th>Tipo</th><th>ETD</th><th>Chegada</th><th>Fiscal</th><th>Resp.</th><th>Saída</th><th>Status</th>
+      </tr></thead><tbody id="corpoRelatorio"></tbody></table>
+    </div>
+    <div class="acoes" style="justify-content:flex-start">
+      <button class="btn-ghost" onclick="exportarCSV()">⬇️ Exportar Excel</button>
+      <button class="btn-ghost" onclick="window.print()">🖨️ Imprimir</button>
+      <button class="btn-ghost" onclick="backup()">💾 Backup</button>
+    </div>
+  </section>
+
+  <div class="rodape">Tempo real pelos servidores públicos gratuitos. Precisa de internet nos celulares.</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
+<script>
+const CHAVE='sistema_carretas_v3';
+const CHAVE_EQ='carretas_equipe_v3';
+const PISCA='São_josé_do_Rio_preto';
+const N_DOCAS=4;
+const BROKER='wss://broker.emqx.io:8084/mqtt';
+
+let estado=carregar();
+let fotoTemp=null;
+let client=null;
+let MEU_ID='id-'+Math.random().toString(36).slice(2);
+let tsAplicado=0;
+let equipe=localStorage.getItem(CHAVE_EQ)||gerarEquipe();
+localStorage.setItem(CHAVE_EQ,equipe);
+const TOPICO='carretas/scrp/'+equipe;
+
+function gerarEquipe(){return Math.random().toString(36).slice(2,8).toUpperCase();}
+function estadoPadrao(){return {seq:1,docks:{1:null,2:null,3:null,4:null},fiscais:{1:'Fiscal 1',2:'Fiscal 2',3:'Fiscal 3',4:'Fiscal 4'},trucks:[]};}
+function carregar(){try{const s=JSON.parse(localStorage.getItem(CHAVE));return (s&&s.docks)?s:estadoPadrao();}catch(e){return estadoPadrao();}}
+function salvarLocal(){localStorage.setItem(CHAVE,JSON.stringify(estado));}
+
+function atualizarRelogio(){
+  const a=new Date();
+  document.getElementById('hora').textContent=a.toLocaleTimeString('pt-BR');
+  document.getElementById('dataHoje').textContent=a.toLocaleDateString('pt-BR');
+}
+setInterval(atualizarRelogio,1000);atualizarRelogio();
+
+function cidade(d){const p=(d||'').split('_');return p[p.length-1]||d||'';}
+function fmtData(d){if(!d)return '—';const [a,m,dia]=d.split('-');return dia+'/'+m+'/'+a;}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function truckPorId(id){return estado.trucks.find(t=>t.id===id)||null;}
+
+function statusRT(on){
+  const p=document.getElementById('pillRT');
+  p.className='pill '+(on?'on':'off');
+  p.textContent=on?'🟢 tempo real ligado':'🔴 sem conexão';
+}
+function conectarRT(){
+  if(typeof mqtt==='undefined'){setTimeout(conectarRT,1200);return;}
+  client=mqtt.connect(BROKER,{clientId:'carreta_'+MEU_ID,keepalive:30,clean:true,reconnectPeriod:3000});
+  client.on('connect',()=>{
+    statusRT(true);
+    client.subscribe(TOPICO);
+    client.publish(TOPICO,JSON.stringify({t:'pede',from:MEU_ID}));
+  });
+  client.on('message',(tp,pl)=>{
+    let msg;try{msg=JSON.parse(pl.toString());}catch(e){return;}
+    if(msg.from===MEU_ID)return;
+    if(msg.t==='pede'){
+      client.publish(TOPICO,JSON.stringify({t:'state',state:estado,ts:tsAplicado||Date.now(),from:MEU_ID}));
+      return;
+    }
+    if(msg.t==='state'){
+      if(msg.ts>=tsAplicado){
+        tsAplicado=msg.ts;
+        estado=msg.state;
+        salvarLocal();renderTudo();
+      }
+    }
+  });
+  client.on('close',()=>statusRT(false));
+  client.on('error',()=>statusRT(false));
+  client.on('reconnect',()=>statusRT(true));
+}
+function publicar(){
+  if(client&&client.connected){
+    tsAplicado=Date.now();
+    client.publish(TOPICO,JSON.stringify({t:'state',state:estado,ts:tsAplicado,from:MEU_ID}));
+  }
+}
+
+function renderDocas(){
+  const el=document.getElementById('docas');el.innerHTML='';
+  for(let i=1;i<=N_DOCAS;i++){
+    const idT=estado.docks[i];
+    const t=idT?truckPorId(idT):null;
+    const fiscal=estado.fiscais[i];
+    const extra=(t&&cidade(t.destino)===PISCA)?'pisca':'';
+    const div=document.createElement('div');
+    div.className='doca '+(t?'':'livre')+' '+extra;
+    div.dataset.cidade=t?cidade(t.destino):'';
+    if(t){
+      const st=cidade(t.destino)===PISCA?'<span class="status st-pisca">🔔 MESMA CIDADE</span>':'<span class="status st-ocupada">OCUPADA</span>';
+      div.innerHTML=`
+        <div class="topo"><span class="num">DOCA ${i}</span>${st}</div>
+        <div class="info">
+          <div class="dest">${t.destino}</div>
+          <div>Placa: <b>${t.placa||'AGUARDANDO'}</b></div>
+          <div>Tipo: <b>${t.tipo}</b> · ETD: <b>${t.etd||'—'}</b></div>
+          <div>Chegada: <b>${fmtData(t.dataChegada)}</b></div>
+          <div>Responsável: <b>${t.responsavel||'—'}</b></div>
+        </div>
+        ${t.foto?`<img class="foto" src="${t.foto}">`:''}
+        <div class="fiscal">👤 Fiscal: <input value="${fiscal}" onchange="trocarFiscal(${i},this.value)"></div>
+        <div class="botoes"><button class="btn-out" onclick="registrarSaida(${i})">🚚 Carreta está saindo</button></div>`;
+    }else{
+      div.innerHTML=`
+        <div class="topo"><span class="num">DOCA ${i}</span><span class="status st-livre">LIVRE</span></div>
+        <div class="info" style="color:var(--mut)">Aguardando carreta…</div>
+        <div class="fiscal">👤 Fiscal: <input value="${fiscal}" onchange="trocarFiscal(${i},this.value)"></div>`;
+    }
+    el.appendChild(div);
+  }
+}
+function trocarFiscal(n,v){estado.fiscais[n]=v;salvarLocal();publicar();}
+
+function renderFila(){
+  const el=document.getElementById('fila');
+  const fila=estado.trucks.filter(t=>t.status==='fila').sort((a,b)=>(a.dataChegada||'9999').localeCompare(b.dataChegada||'9999'));
+  if(!fila.length){el.innerHTML='<div class="vazio">Nenhuma carreta na fila.</div>';return;}
+  el.innerHTML=fila.map(t=>`
+    <div class="item-fila">
+      <div class="dados">
+        <div class="dest">${t.destino} ${cidade(t.destino)===PISCA?'🔔':''}</div>
+        <div><span class="placa">${t.placa||'PLACA AO CHEGAR'}</span> · ${t.tipo} · ETD ${t.etd||'—'} · Chegada ${fmtData(t.dataChegada)}</div>
+      </div>
+      <div class="botoes" style="min-width:190px">
+        ${[1,2,3,4].map(i=>`<button class="btn-add" style="flex:none;padding:7px 9px" onclick="colocarNaDoca(${i},${t.id})">→ D${i}</button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderRelatorio(){
+  const corpo=document.getElementById('corpoRelatorio');
+  const mes=new Date().toISOString().slice(0,7);
+  const dados=estado.trucks.filter(t=>t.dataChegada&&t.dataChegada.slice(0,7)===mes).sort((a,b)=>(a.dataChegada||'').localeCompare(b.dataChegada||''));
+  if(!dados.length){corpo.innerHTML='<tr><td colspan="9" class="vazio">Nenhum registro neste mês.</td></tr>';return;}
+  corpo.innerHTML=dados.map(t=>{
+    let tag;
+    if(t.status==='saiu')tag='<span class="tag-saiu">SAIU</span>';
+    else if(t.status==='doca')tag=`<span class="tag-doca">NA DOCA ${t.doca}</span>`;
+    else tag='<span class="tag-fila">NA FILA</span>';
+    const saida=t.saidaTs?new Date(t.saidaTs).toLocaleString('pt-BR'):'—';
+    return `<tr>
+      <td><b>${t.destino}</b></td><td style="font-family:monospace">${t.placa||'—'}</td>
+      <td>${t.tipo}</td><td>${t.etd||'—'}</td><td>${fmtData(t.dataChegada)}</td>
+      <td>${t.doca?estado.fiscais[t.doca]:'—'}</td><td>${t.responsavel||'—'}</td>
+      <td>${saida}</td><td>${tag}</td></tr>`;
+  }).join('');
+}
+
+function colocarNaDoca(doca,idT){
+  if(estado.docks[doca]){toast('⚠️ Doca '+doca+' já está ocupada!');return;}
+  const t=truckPorId(idT);if(!t)return;
+  estado.docks[doca]=idT;t.status='doca';t.doca=doca;t.entradaTs=t.entradaTs||Date.now();
+  salvarLocal();publicar();renderTudo();
+  toast('✅ Carreta '+(t.placa||t.destino)+' na Doca '+doca);
+}
+function registrarChegada(){
+  const destino=document.getElementById('fDestino').value;
+  const placa=document.getElementById('fPlaca').value.trim().toUpperCase();
+  const tipo=document.getElementById('fTipo').value;
+  const etd=document.getElementById('fEtd').value;
+  const data=document.getElementById('fData').value;
+  const resp=document.getElementById('fResp').value.trim();
+  if(!placa){toast('⚠️ Coloque a placa da carreta!');return;}
+  if(!data){toast('⚠️ Informe a data de chegada!');return;}
+  estado.trucks.push({id:estado.seq++,destino,placa,tipo,etd,dataChegada:data,responsavel:resp,foto:fotoTemp,status:'fila',entradaTs:Date.now(),saidaTs:null});
+  salvarLocal();publicar();
+  document.getElementById('fPlaca').value='';
+  document.getElementById('fResp').value='';
+  document.getElementById('fEtd').value='';
+  document.getElementById('fData').value='';
+  document.getElementById('fFoto').value='';
+  const p=document.getElementById('preview');p.style.display='none';p.src='';fotoTemp=null;
+  renderTudo();
+  toast('✅ Chegada registrada — '+destino);
+}
+function registrarSaida(doca){
+  const idT=estado.docks[doca];if(!idT)return;
+  const t=truckPorId(idT);if(!t)return;
+  const cidSaida=cidade(t.destino);
+  t.status='saiu';t.saidaTs=Date.now();estado.docks[doca]=null;
+  salvarLocal();publicar();renderTudo();
+  toast('🚚 Carreta saiu da Doca '+doca+' ('+t.destino+')');
+  setTimeout(()=>{
+    document.querySelectorAll('.doca').forEach(d=>{
+      if(d.dataset.cidade&&d.dataset.cidade===cidSaida){
+        d.classList.add('pisca-alerta');
+        setTimeout(()=>d.classList.remove('pisca-alerta'),9000);
+      }
+    });
+  },100);
+}
+
+function exportarCSV(){
+  const mes=new Date().toISOString().slice(0,7);
+  const dados=estado.trucks.filter(t=>t.dataChegada&&t.dataChegada.slice(0,7)===mes);
+  if(!dados.length){toast('⚠️ Nenhum registro no mês.');return;}
+  let csv='Destino;Placa;Tipo;ETD;Chegada;Fiscal;Responsavel;Saida;Status\n';
+  csv+=dados.map(t=>[t.destino,t.placa||'',t.tipo,t.etd||'',fmtData(t.dataChegada),t.doca?estado.fiscais[t.doca]:'',t.responsavel||'',t.saidaTs?new Date(t.saidaTs).toLocaleString('pt-BR'):'',t.status].join(';')).join('\n');
+  baixar(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'relatorio-docas-'+mes+'.csv');
+  toast('⬇️ Relatório exportado');
+}
+function backup(){
+  baixar(new Blob([JSON.stringify(estado)],{type:'application/json'}),'backup-docas-'+new Date().toISOString().slice(0,10)+'.json');
+  toast('💾 Backup salvo');
+}
+function baixar(blob,nome){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4e3);
+}
+function aba(n){
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('ativo'));
+  document.getElementById('secaoPainel').style.display=n==='painel'?'':'none';
+  document.getElementById('secaoChegada').style.display=n==='chegada'?'':'none';
+  document.getElementById('secaoRelatorio').style.display=n==='relatorio'?'':'none';
+  const idx={painel:0,chegada:1,relatorio:2}[n];
+  document.querySelectorAll('.tabbar button')[idx].classList.add('ativo');
+}
+
+document.getElementById('fFoto').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas');const max=420;
+      let w=img.width,h=img.height;
+      if(w>max||h>max){const k=Math.min(max/w,max/h);w=Math.round(w*k);h=Math.round(h*k);}
+      cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      fotoTemp=cv.toDataURL('image/jpeg',0.7);
+      const p=document.getElementById('preview');p.src=fotoTemp;p.style.display='block';
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(f);
+});
+
+function renderTudo(){renderDocas();renderFila();renderRelatorio();}
+window.addEventListener('storage',e=>{if(e.key===CHAVE){estado=carregar();renderTudo();}});
+conectarRT();
+renderTudo();
+</script>
+</body>
+</html>
